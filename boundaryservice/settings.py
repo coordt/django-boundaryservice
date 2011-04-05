@@ -3,8 +3,8 @@ from django.conf import settings
 DEFAULT_SETTINGS = {
     "SHAPEFILES_DIR": 'data/shapefiles',
     "GEOMETRY_COLUMN": 'shape',
-    "API_DOMAIN": '',
-    "API_PREFIX": '/boundaries/',
+    "API_DOMAIN": '/',
+    "API_PREFIX": 'boundaries/',
 }
 
 DEFAULT_SETTINGS.update(getattr(settings, 'BOUNDARY_SVC_SETTINGS', {}))
