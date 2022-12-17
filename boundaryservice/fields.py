@@ -26,18 +26,15 @@ class ListField(models.TextField):
     def to_python(self, value):
         if not value: return
 
-        if isinstance(value, list):
-            return value
-
-        return value.split(self.separator)
+        return value if isinstance(value, list) else value.split(self.separator)
  
     def get_db_prep_value(self, value):
         if not value: return
 
-        if not isinstance(value, list) and not isinstance(value, tuple):
+        if isinstance(value, (list, tuple)):
+            return self.separator.join([unicode(s) for s in value])
+        else:
             raise ValueError('Value for ListField must be either a list or tuple.')
-
-        return self.separator.join([unicode(s) for s in value])
  
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
@@ -84,7 +81,7 @@ class JSONField(models.TextField):
         if value == "":
             return None
 
-        if isinstance(value, dict) or isinstance(value, list):
+        if isinstance(value, (dict, list)):
             value = json.dumps(value, cls=DjangoJSONEncoder)
 
         return super(JSONField, self).get_prep_value(value)

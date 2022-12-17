@@ -11,8 +11,7 @@ def get_site_url_root():
         CURRENT_SITE = "localhost"
     domain = CURRENT_SITE
     protocol = getattr(settings, 'DEFAULT_PROTOCOL', 'http')
-    port     = getattr(settings, 'DEFAULT_PORT', '')
-    url = '%s://%s' % (protocol, domain)
-    if port:
-        url += ':%s' % port
+    url = f'{protocol}://{domain}'
+    if port := getattr(settings, 'DEFAULT_PORT', ''):
+        url += f':{port}'
     return url

@@ -34,7 +34,7 @@ class Command(BaseCommand):
         # Load configuration
         sys.path.append(os.path.abspath(SHAPEFILES_DIR))
         from definitions import SHAPEFILES
-        
+
         if options['only']:
             only = options['only'].split(',')
             # TODO: stripping whitespace here because optparse doesn't handle 
@@ -45,8 +45,8 @@ class Command(BaseCommand):
             # See above
             sources = [s for s in SHAPEFILES if s.replace(' ', '') not in exceptions]
         else:
-            sources = [s for s in SHAPEFILES]
-        
+            sources = list(SHAPEFILES)
+
         # Get spatial reference system for the postgis geometry field
         geometry_field = Boundary._meta.get_field_by_name(GEOMETRY_COLUMN)[0]
         SpatialRefSys = connections[DEFAULT_DB_ALIAS].ops.spatial_ref_sys()
@@ -54,10 +54,10 @@ class Command(BaseCommand):
 
         for kind, config in SHAPEFILES.items():
             if kind not in sources:
-                log.info('Skipping %s.' % kind)
+                log.info(f'Skipping {kind}.')
                 continue
 
-            log.info('Processing %s.' % kind)
+            log.info(f'Processing {kind}.')
 
             if options['clear']:
                 set = None
@@ -68,17 +68,17 @@ class Command(BaseCommand):
                     pass
 
                 if set:
-                    log.info('Clearing old %s.' % kind)
+                    log.info(f'Clearing old {kind}.')
                     set.boundaries.all().delete()
                     set.delete()
-                    log.info('Loading new %s.' % kind)
+                    log.info(f'Loading new {kind}.')
 
             path = os.path.join(SHAPEFILES_DIR, config['file'])
             datasource = DataSource(path)
 
             # Assume only a single-layer in shapefile
             if datasource.layer_count > 1:
-                log.warn('%s shapefile has multiple layers, using first.' % kind)
+                log.warn(f'{kind} shapefile has multiple layers, using first.')
 
             layer = datasource[0]
             if 'srid' in config and config['srid']:
@@ -106,14 +106,14 @@ class Command(BaseCommand):
                 # Transform the geometry to the correct SRS
                 geometry = self.polygon_to_multipolygon(feature.geom)
                 geometry.transform(transformer)
-    
+
                 # Create simplified geometry field by collapsing points 
                 # within 1/1000th of a degree. Since Chicago is at approx. 
                 # 42 degrees latitude this works out to an margin of roughly 
                 # 80 meters latitude and 112 meters longitude. Preserve 
                 # topology prevents a shape from ever crossing over itself.
                 simple_geometry = geometry.geos.simplify(0.0001, preserve_topology=True)
-                
+
                 # Conversion may force multipolygons back to being polygons
                 simple_geometry = self.polygon_to_multipolygon(simple_geometry.ogr)
 
@@ -121,7 +121,7 @@ class Command(BaseCommand):
                 metadata = {}
 
                 for field in layer.fields:
-                    
+
                     # Decode string fields using encoding specified in 
                     # definitions config
                     if config['encoding'] != '':
@@ -135,16 +135,16 @@ class Command(BaseCommand):
 
                 external_id = config['ider'](feature)
                 feature_name = config['namer'](feature)
-                
+
                 # If encoding is specified, decode id and feature name
                 if config['encoding'] != '':
                     external_id = external_id.decode(config['encoding'])
                     feature_name = feature_name.decode(config['encoding'])
 
                 if config['kind_first']:
-                    display_name = '%s %s' % (config['singular'], feature_name)
+                    display_name = f"{config['singular']} {feature_name}"
                 else:
-                    display_name = '%s %s' % (feature_name, config['singular'])
+                    display_name = f"{feature_name} {config['singular']}"
 
                 Boundary.objects.create(
                     set=set,

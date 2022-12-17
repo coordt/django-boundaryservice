@@ -37,12 +37,11 @@ class simple_namer():
     def __call__(self, feature):
         attribute_values = map(str, map(feature.get, self.attribute_names))
         name = self.seperator.join(attribute_values).strip()
-    
+
         if self.normalizer:
-            normed = self.normalizer(name)
-            if not normed:
-                raise ValueError('Failed to normalize \"%s\".' % name)
-            else:
+            if normed := self.normalizer(name):
                 name = normed
 
+            else:
+                raise ValueError('Failed to normalize \"%s\".' % name)
         return name

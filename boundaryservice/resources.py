@@ -40,34 +40,34 @@ class BoundaryResource(SluggedResource):
         """
         if filters is None:
             filters = {}
-        
+
         orm_filters = super(BoundaryResource, self).build_filters(filters)
-        
+
         if 'sets' in filters:
             sets = filters['sets'].split(',')
-            
+
             orm_filters.update({'set__slug__in': sets})
-        
+
         if 'contains' in filters:
             lat, lon = filters['contains'].split(',')
-            wkt_pt = 'POINT(%s %s)' % (lon, lat)
-            
+            wkt_pt = f'POINT({lon} {lat})'
+
             orm_filters.update({'shape__contains': wkt_pt})
-        
+
         if 'near' in filters:
             lat, lon, range = filters['near'].split(',')
-            wkt_pt = 'POINT(%s %s)' % (lon, lat)
-            numeral = re.match('([0-9]+)', range).group(1)
+            wkt_pt = f'POINT({lon} {lat})'
+            numeral = re.match('([0-9]+)', range)[1]
             unit = range[len(numeral):]
             numeral = int(numeral)
             kwargs = {unit: numeral}
-            
+
             orm_filters.update({'shape__distance_lte': (wkt_pt, D(**kwargs))})
-        
+
         if 'intersects' in filters:
             slug = filters['intersects']
             bounds = Boundary.objects.get(slug=slug)
-            
+
             orm_filters.update({'shape__intersects': bounds.shape})            
-        
+
         return orm_filters

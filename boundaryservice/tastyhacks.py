@@ -23,10 +23,7 @@ class ListApiField(ApiField):
         return self.convert(super(ListApiField, self).dehydrate(obj))
     
     def convert(self, value):
-        if value is None:
-            return None
-        
-        return value
+        return None if value is None else value
 
 class JSONApiField(ApiField):
     """
@@ -39,10 +36,7 @@ class JSONApiField(ApiField):
         return self.convert(super(JSONApiField, self).dehydrate(obj))
     
     def convert(self, value):
-        if value is None:
-            return None
-        
-        return value
+        return None if value is None else value
 
 class GeometryApiField(ApiField):
     """
@@ -55,12 +49,7 @@ class GeometryApiField(ApiField):
         return self.convert(super(GeometryApiField, self).dehydrate(obj))
     
     def convert(self, value):
-        if value is None:
-            return None
-
-        # Get ready-made geojson serialization and then convert it _back_ to a Python object
-        # so that Tastypie can serialize it as part of the bundle
-        return simplejson.loads(value.geojson)
+        return None if value is None else simplejson.loads(value.geojson)
 
 
 class SluggedResource(ModelResource):
@@ -72,9 +61,18 @@ class SluggedResource(ModelResource):
         Add slug-based url pattern.
         """
         return [
-            url(r"^(?P<resource_name>%s)/schema%s$" % (self._meta.resource_name, trailing_slash()), self.wrap_view('get_schema'), name="api_get_schema"),
-            url(r"^(?P<resource_name>%s)/(?P<slug>[\w\d_.-]+)/$" % self._meta.resource_name, self.wrap_view('dispatch_detail'), name="api_dispatch_detail"),
-            ]
+            url(
+                f"^(?P<resource_name>{self._meta.resource_name})/schema{trailing_slash()}$",
+                self.wrap_view('get_schema'),
+                name="api_get_schema",
+            ),
+            url(
+                r"^(?P<resource_name>%s)/(?P<slug>[\w\d_.-]+)/$"
+                % self._meta.resource_name,
+                self.wrap_view('dispatch_detail'),
+                name="api_dispatch_detail",
+            ),
+        ]
 
     def get_resource_uri(self, bundle_or_obj):
         """
@@ -82,16 +80,14 @@ class SluggedResource(ModelResource):
         """
         kwargs = {
             'resource_name': self._meta.resource_name,
+            'slug': bundle_or_obj.obj.slug
+            if isinstance(bundle_or_obj, Bundle)
+            else bundle_or_obj.slug,
         }
-        
-        if isinstance(bundle_or_obj, Bundle):
-            kwargs['slug'] = bundle_or_obj.obj.slug
-        else:
-            kwargs['slug'] = bundle_or_obj.slug
-        
+
         if self._meta.api_name is not None:
             kwargs['api_name'] = self._meta.api_name
-        
+
         return self._build_reverse_url("api_dispatch_detail", kwargs=kwargs)
 
     @classmethod

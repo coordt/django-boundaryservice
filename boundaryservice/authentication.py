@@ -24,7 +24,7 @@ class NoOpApiKeyAuthentication(ApiKeyAuthentication):
         return self.get_key(user, api_key)
 
     def _get_anonymous_identifier(self, request):
-        return 'anonymous_%s' % request.META.get('REMOTE_ADDR', 'noaddr')
+        return f"anonymous_{request.META.get('REMOTE_ADDR', 'noaddr')}"
 
     def get_identifier(self, request):
         return request.REQUEST.get('username', self._get_anonymous_identifier(request))
